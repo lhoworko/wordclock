@@ -1,4 +1,5 @@
 #include <FastLED.h>
+#include "ledGrid.h"
 
 #define BUTTON_PIN 3
 #define LED_PIN 13
@@ -11,7 +12,7 @@
 #define HEIGHT 8
 #define NUM_LEDS (WIDTH * HEIGHT)
 
-#define STARTUP_SECONDS 3
+#define STARTUP_SECONDS 1
 
 CRGB leds[NUM_LEDS];
 
@@ -28,6 +29,7 @@ void setup() {
   FastLED.setBrightness(BRIGHTNESS);
   
   pinMode(BUTTON_PIN, INPUT);
+  Serial.begin(9600);
 
   uint32_t start_time = millis();
   for (uint32_t ms = millis(); ms < (start_time + (STARTUP_SECONDS * 1000)); ms = millis()) {
@@ -38,9 +40,20 @@ void setup() {
     FastLED.setBrightness(BRIGHTNESS);
     FastLED.show();
   }
+
+  resetClock();
+
+  drawWord(TO, 1);
+  drawWord(PAST, 1);
+  drawWord(MINUTES, 1);
+  FastLED.show();
 }
 
 void loop() {
+
+
+
+  
   int buttonReading = digitalRead(BUTTON_PIN);
 
   if (buttonPressed(buttonReading)) {
@@ -84,6 +97,29 @@ void drawFrame(byte startHue8, int8_t yHueDelta8, int8_t xHueDelta8) {
   }
 }
 
+void resetClock() {
+  for (int x = 0; x < WIDTH; x++) {
+    for (int y = 0; y < HEIGHT; y++) {
+      leds[xy(x, y)] = CRGB::Black;
+    }
+  }
+}
+
+void drawWord(int *word, int color) {
+  int numWords = *word;
+
+  for (int currWord = 0; currWord < numWords; currWord++) {
+    int currWordOffset = currWord * 3;
+    int x = *(word + currWordOffset + 1);
+    int y = *(word + currWordOffset + 2);
+    int len = *(word + currWordOffset + 3);
+    
+    for (int i = 0; i < len; i++) {
+      leds[xy(x + i, y)] = CHSV(100, 255, 255);
+    }
+  }
+}
+
 uint16_t xy(uint8_t x, uint8_t y) {
   uint16_t i;
   
@@ -93,6 +129,6 @@ uint16_t xy(uint8_t x, uint8_t y) {
   } else {
     i = (y * WIDTH) + x;
   }
-  
+
   return i;
 }
