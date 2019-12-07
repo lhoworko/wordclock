@@ -19,25 +19,23 @@ CRGB leds[NUM_LEDS];
 int ledState = HIGH;
 int buttonState;
 int lastButtonState = LOW;
+int randomTimeOffset;
 
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 100;   // the debounce time; increase if the output flickers
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT);
+  randomSeed(analogRead(0));
+  randomTimeOffset = random(0, 256 * 6);
+  delay(1000);
 
-  delay(3000);
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
-  
+
   bootAnimation();
 
   resetClock();
-
-  drawWord(TO, 1);
-  drawWord(PAST, 1);
-  drawWord(MINUTES, 1);
-  FastLED.show();
 }
 
 void loop() {
@@ -46,17 +44,26 @@ void loop() {
   if (buttonPressed(buttonReading)) {
 
   }
+
+  unsigned long t = (millis() / 1000) + randomTimeOffset;
+  CRGB color = getColor(t);
+
+  drawWord(TO, color);
+  drawWord(PAST, color);
+  drawWord(MINUTES, color);
+
+  FastLED.show();
 }
 
 // Returns true when the button is initially pressed. Only returns true once, holding down does nothing.
 boolean buttonPressed(int pinReading) {
   // Debouncing logic from the example Arduino Debounce sketch.
   boolean result = false;
-  
+
   if (pinReading != lastButtonState) {
     lastDebounceTime = millis();
   }
-  
+
   if ((millis() - lastDebounceTime) > debounceDelay) {
     if (pinReading != buttonState) {
       buttonState = pinReading;
@@ -66,7 +73,7 @@ boolean buttonPressed(int pinReading) {
       }
     }
   }
-  
+
   lastButtonState = pinReading;
   return result;
 }
@@ -86,11 +93,11 @@ void bootAnimation() {
 // Draw a single frame of the bootup animation
 void drawFrame(byte startHue8, int8_t yHueDelta8, int8_t xHueDelta8) {
   byte lineStartHue = startHue8;
-  
-  for( byte y = 0; y < HEIGHT; y++) {
+
+  for (byte y = 0; y < HEIGHT; y++) {
     lineStartHue += yHueDelta8;
-    byte pixelHue = lineStartHue;    
-      
+    byte pixelHue = lineStartHue;
+
     for (byte x = 0; x < WIDTH; x++) {
       pixelHue += xHueDelta8;
       leds[xy(x, y)]  = CHSV(pixelHue, 255, 255);
@@ -108,7 +115,7 @@ void resetClock() {
 }
 
 // Draw a single word into the leds array - does not turn on the leds
-void drawWord(int *word, int color) {
+void drawWord(int *word, CRGB color) {
   int numWords = *word;
 
   for (int currWord = 0; currWord < numWords; currWord++) {
@@ -118,8 +125,23 @@ void drawWord(int *word, int color) {
     int len = *(word + currWordOffset + 3);
 
     for (int i = 0; i < len; i++) {
-      leds[xy(x + i, y)] = CHSV(100, 255, 255);
+      leds[xy(x + i, y)] = color;
     }
+  }
+}
+
+// Get the CRGB value given the current time
+CRGB getColor(unsigned long currTime) {
+  // # 255 0 0 -> 255 255 0 -> 0 255 0 -> 0 255 255 -> 0 0 255 -> 255 0 255 -> 255 0 0
+  short inRange = (currTime % (255 * 6)) / 255;
+
+  switch (inRange) {
+    case 0: return CRGB(255, currTime % 256, 0);
+    case 1: return CRGB(255 - (currTime % 256), 255, 0);
+    case 2: return CRGB(0, 255, currTime % 256);
+    case 3: return CRGB(0, 255 - (currTime % 256), 255);
+    case 4: return CRGB(currTime % 256, 0, 255);
+    default: return CRGB(255, 0, 255 - (currTime % 256));
   }
 }
 
