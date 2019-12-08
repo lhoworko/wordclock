@@ -7,13 +7,13 @@
 
 #define LED_TYPE WS2811
 #define COLOR_ORDER RGB
-#define BRIGHTNESS 64
+#define BRIGHTNESS 120
 
 #define WIDTH 13
 #define HEIGHT 8
 #define NUM_LEDS (WIDTH * HEIGHT)
 
-#define STARTUP_SECONDS 0
+#define STARTUP_SECONDS 3
 
 RTC_DS3231 rtc;
 CRGB leds[NUM_LEDS];
@@ -29,7 +29,6 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT);
 
   rtc.begin();
-  Serial.begin(9600);
   
   delay(1000);
   
@@ -116,8 +115,8 @@ void drawTime(DateTime now) {
 
   resetClock();
 
-  uint8_t hourIndex = now.hour() % 12;
   uint8_t minuteIndex = now.minute() / 5;
+  uint8_t hourIndex = (now.hour() + (minuteIndex > 6 ? 1 : 0)) % 12;
 
   drawWord(IT, color);
   drawWord(IS, color);
