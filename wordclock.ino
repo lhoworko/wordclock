@@ -6,7 +6,7 @@
 #define LED_PIN 13
 
 #define LED_TYPE WS2811
-#define COLOR_ORDER RGB
+#define COLOR_ORDER GRB
 #define BRIGHTNESS 120
 
 #define WIDTH 13
@@ -161,8 +161,8 @@ void drawWord(int *word, CRGB color) {
 
 // Get the CRGB value given the current time
 CRGB getColor(unsigned long currTime) {
-  // # 255 0 0 -> 255 255 0 -> 0 255 0 -> 0 255 255 -> 0 0 255 -> 255 0 255 -> 255 0 0
-  short inRange = (currTime % (255 * 6)) / 255;
+  // 255 0 0 -> 255 255 0 -> 0 255 0 -> 0 255 255 -> 0 0 255 -> 255 0 255 -> 255 0 0
+  short inRange = (currTime % (256 * 6)) / 256;
 
   switch (inRange) {
     case 0: return CRGB(255, currTime % 256, 0);
