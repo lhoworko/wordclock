@@ -1,40 +1,43 @@
 #include <FastLED.h>
+#include <DS3231.h>
+#include <Wire.h>
 #include "ledGrid.h"
 
 #define BUTTON_PIN 3
 #define LED_PIN 13
 
 #define LED_TYPE WS2811
-#define COLOR_ORDER GRB
+#define COLOR_ORDER RGB
 #define BRIGHTNESS 64
 
 #define WIDTH 13
 #define HEIGHT 8
 #define NUM_LEDS (WIDTH * HEIGHT)
 
-#define STARTUP_SECONDS 1
+#define STARTUP_SECONDS 0
 
+RTClib RTC;
+DS3231 rtcClock;
 CRGB leds[NUM_LEDS];
 
 int ledState = HIGH;
 int buttonState;
 int lastButtonState = LOW;
-int randomTimeOffset;
 
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
 unsigned long debounceDelay = 100;   // the debounce time; increase if the output flickers
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT);
-  randomSeed(analogRead(0));
-  randomTimeOffset = random(0, 256 * 6);
-  delay(1000);
 
+  Wire.begin();
+  Serial.begin(9600);
+  delay(1000);
+  
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
   FastLED.setBrightness(BRIGHTNESS);
 
   bootAnimation();
-
   resetClock();
 }
 
@@ -45,14 +48,8 @@ void loop() {
 
   }
 
-  unsigned long t = (millis() / 1000) + randomTimeOffset;
-  CRGB color = getColor(t);
-
-  drawWord(TO, color);
-  drawWord(PAST, color);
-  drawWord(MINUTES, color);
-
-  FastLED.show();
+  drawTime(RTC.now());
+  delay(100);
 }
 
 // Returns true when the button is initially pressed. Only returns true once, holding down does nothing.
@@ -112,6 +109,39 @@ void resetClock() {
       leds[xy(x, y)] = CRGB::Black;
     }
   }
+}
+
+void drawTime(DateTime now) {
+  CRGB color = getColor(now.unixtime());
+
+  resetClock();
+
+  uint8_t hourIndex = now.hour() % 12;
+  uint8_t minuteIndex = now.minute() / 5;
+
+  drawWord(IT, color);
+  drawWord(IS, color);
+
+  drawWord(MINUTES_LIST[minuteIndex], color);
+
+  // Not NOTHING, QUARTER PAST, HALF PAST, QUARTER TO
+  if (minuteIndex % 3 != 0) {
+    drawWord(MINUTES, color);
+  }
+
+  if (minuteIndex > 0 && minuteIndex <= 6) {
+    drawWord(PAST, color);
+  } else if (minuteIndex > 6) {
+    drawWord(TO, color);
+  }
+
+  drawWord(HOURS_LIST[hourIndex], color);
+
+  if (minuteIndex == 0) {
+    drawWord(OCLOCK, color);
+  }
+
+  FastLED.show();
 }
 
 // Draw a single word into the leds array - does not turn on the leds
