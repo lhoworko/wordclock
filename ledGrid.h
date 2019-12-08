@@ -15,7 +15,7 @@ int OCLOCK[] {1, 7, 7, 6};
 // Minutes
 int FIVEM[] {1, 0, 2, 4};
 int TENM[] {1, 6, 0, 3};
-int QUARTER[] {1, 0, 1, 6};
+int QUARTER[] {1, 0, 1, 7};
 int TWENTY[] {1, 7, 1, 6};
 int TWENTYFIVE[] {2, 7, 1, 6, 0, 2, 4};
 int HALF[] {1, 9, 0, 4};
