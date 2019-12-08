@@ -1,6 +1,5 @@
 #include <FastLED.h>
-#include <DS3231.h>
-#include <Wire.h>
+#include <RTClib.h>
 #include "ledGrid.h"
 
 #define BUTTON_PIN 3
@@ -16,8 +15,7 @@
 
 #define STARTUP_SECONDS 0
 
-RTClib RTC;
-DS3231 rtcClock;
+RTC_DS3231 rtc;
 CRGB leds[NUM_LEDS];
 
 int ledState = HIGH;
@@ -30,8 +28,9 @@ unsigned long debounceDelay = 100;   // the debounce time; increase if the outpu
 void setup() {
   pinMode(BUTTON_PIN, INPUT);
 
-  Wire.begin();
+  rtc.begin();
   Serial.begin(9600);
+  
   delay(1000);
   
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
@@ -43,12 +42,13 @@ void setup() {
 
 void loop() {
   int buttonReading = digitalRead(BUTTON_PIN);
+  DateTime currentTime = rtc.now();
 
   if (buttonPressed(buttonReading)) {
-
+    rtc.adjust(currentTime + (5 * 60));
   }
-
-  drawTime(RTC.now());
+    
+  drawTime(currentTime);
   delay(100);
 }
 
